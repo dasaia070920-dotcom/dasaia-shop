@@ -1,92 +1,114 @@
 import Link from "next/link";
-import {
-  Instagram,
-  Facebook,
-  Mail,
-  Phone,
-  MapPin,
-} from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="mt-24 border-t border-gray-200 bg-white">
-      <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 md:grid-cols-4">
+    <footer className="border-t border-[#e8e8e8] bg-white">
+      <div className="mx-auto max-w-7xl px-6 py-16">
+        <div className="grid gap-12 md:grid-cols-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-[0.2em]">
+              DASAIA
+            </h2>
 
-        <div>
-          <h2 className="mb-5 text-3xl font-semibold tracking-[0.35em]">
-            DASAIA
-          </h2>
-
-          <p className="leading-7 text-gray-600">
-            Moda, accesorios, perfumes y belleza para mujeres que buscan elegancia en cada detalle.
-          </p>
-
-          <div className="mt-8 flex gap-4">
-            <a href="#">
-              <Instagram className="transition hover:scale-110" />
-            </a>
-
-            <a href="#">
-              <Facebook className="transition hover:scale-110" />
-            </a>
+            <p className="mt-4 max-w-xs text-sm leading-6 text-gray-500">
+              Moda, accesorios, perfumes y belleza con un estilo
+              elegante pensado para cada día.
+            </p>
           </div>
-        </div>
 
-        <div>
-          <h3 className="mb-5 font-semibold uppercase tracking-widest">
-            Comprar
-          </h3>
+          <div>
+            <h3 className="font-semibold">
+              Tienda
+            </h3>
 
-          <div className="space-y-3 text-gray-600">
-            <Link href="/">Inicio</Link><br />
-            <Link href="/#products">Productos</Link><br />
-            <Link href="/favorites">Favoritos</Link><br />
-            <Link href="/cart">Carrito</Link>
-          </div>
-        </div>
+            <div className="mt-4 flex flex-col gap-3 text-sm text-gray-600">
+              <Link
+                href="/"
+                className="transition hover:text-black"
+              >
+                Inicio
+              </Link>
 
-        <div>
-          <h3 className="mb-5 font-semibold uppercase tracking-widest">
-            Ayuda
-          </h3>
+              <Link
+                href="/#productos"
+                className="transition hover:text-black"
+              >
+                Productos
+              </Link>
 
-          <div className="space-y-3 text-gray-600">
-            <p>Envíos</p>
-            <p>Devoluciones</p>
-            <p>Preguntas frecuentes</p>
-            <p>Política de privacidad</p>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="mb-5 font-semibold uppercase tracking-widest">
-            Contacto
-          </h3>
-
-          <div className="space-y-4 text-gray-600">
-
-            <div className="flex items-center gap-3">
-              <Mail size={18} />
-              contacto@dasaia.com
+              <Link
+                href="/cart"
+                className="transition hover:text-black"
+              >
+                Carrito
+              </Link>
             </div>
+          </div>
 
-            <div className="flex items-center gap-3">
-              <Phone size={18} />
-              +34 600 000 000
+          <div>
+            <h3 className="font-semibold">
+              Información
+            </h3>
+
+            <div className="mt-4 flex flex-col gap-3 text-sm text-gray-600">
+              <Link
+                href="/legal"
+                className="transition hover:text-black"
+              >
+                Aviso legal
+              </Link>
+
+              <Link
+                href="/privacy"
+                className="transition hover:text-black"
+              >
+                Política de privacidad
+              </Link>
+
+              <Link
+                href="/cookies"
+                className="transition hover:text-black"
+              >
+                Política de cookies
+              </Link>
+
+              <Link
+                href="/terms"
+                className="transition hover:text-black"
+              >
+                Condiciones de compra y devoluciones
+              </Link>
             </div>
+          </div>
 
-            <div className="flex items-center gap-3">
-              <MapPin size={18} />
-              España
+          <div>
+            <h3 className="font-semibold">
+              Contacto
+            </h3>
+
+            <div className="mt-4 space-y-3 text-sm text-gray-600">
+              <p>
+                DASAIA
+              </p>
+
+              <p>
+                Puig-Reig, Barcelona
+              </p>
+
+              <a
+                href="mailto:dasaia070920@gmail.com"
+                className="block transition hover:text-black"
+              >
+                dasaia070920@gmail.com
+              </a>
             </div>
-
           </div>
         </div>
 
-      </div>
-
-      <div className="border-t border-gray-200 py-6 text-center text-sm text-gray-500">
-        © 2026 DASAIA · Todos los derechos reservados.
+        <div className="mt-12 border-t border-[#e8e8e8] pt-8 text-center text-sm text-gray-500">
+          © {new Date().getFullYear()} DASAIA. Todos los derechos
+          reservados.
+        </div>
       </div>
     </footer>
   );
