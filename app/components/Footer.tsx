@@ -29,12 +29,12 @@ export default function Footer() {
                 Inicio
               </Link>
 
-              <Link
-                href="/#productos"
+              <a
+                href="/#products"
                 className="transition hover:text-black"
               >
                 Productos
-              </Link>
+              </a>
 
               <Link
                 href="/cart"
