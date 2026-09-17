@@ -1,3 +1,7 @@
+"use client";
+
+import Link from "next/link";
+
 type Props = {
   totalProducts: number;
   totalOrders: number;
@@ -11,55 +15,91 @@ export default function DashboardStats({
   totalCustomers,
   totalSales,
 }: Props) {
-  const cards = [
-    {
-      title: "Productos",
-      value: totalProducts,
-      icon: "📦",
-      color: "bg-blue-500",
-    },
-    {
-      title: "Pedidos",
-      value: totalOrders,
-      icon: "🛒",
-      color: "bg-purple-500",
-    },
-    {
-      title: "Clientes",
-      value: totalCustomers,
-      icon: "👥",
-      color: "bg-green-500",
-    },
-    {
-      title: "Ventas",
-      value: `${totalSales.toFixed(2)} €`,
-      icon: "💶",
-      color: "bg-black",
-    },
-  ];
-
   return (
     <div className="mb-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-      {cards.map((card) => (
-        <div
-          key={card.title}
-          className="rounded-3xl bg-white p-6 shadow-lg"
-        >
-          <div
-            className={`mb-5 inline-flex rounded-2xl ${card.color} p-4 text-3xl text-white`}
-          >
-            {card.icon}
-          </div>
-
-          <h3 className="text-gray-500">
-            {card.title}
-          </h3>
-
-          <p className="mt-2 text-3xl font-bold">
-            {card.value}
-          </p>
+      <Link
+        href="/admin/products"
+        className="block cursor-pointer rounded-3xl bg-white p-6 shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
+      >
+        <div className="mb-5 inline-flex rounded-2xl bg-black p-4 text-3xl">
+          📦
         </div>
-      ))}
+
+        <h3 className="text-gray-500">
+          Productos
+        </h3>
+
+        <p className="mt-2 text-3xl font-bold">
+          {totalProducts}
+        </p>
+
+        <p className="mt-3 text-sm text-gray-400">
+          Ver productos →
+        </p>
+      </Link>
+
+      <Link
+        href="/admin/orders"
+        className="block cursor-pointer rounded-3xl bg-white p-6 shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
+      >
+        <div className="mb-5 inline-flex rounded-2xl bg-black p-4 text-3xl">
+          🛍️
+        </div>
+
+        <h3 className="text-gray-500">
+          Pedidos
+        </h3>
+
+        <p className="mt-2 text-3xl font-bold">
+          {totalOrders}
+        </p>
+
+        <p className="mt-3 text-sm text-gray-400">
+          Ver pedidos →
+        </p>
+      </Link>
+
+      <Link
+        href="/admin/customers"
+        className="block cursor-pointer rounded-3xl bg-white p-6 shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
+      >
+        <div className="mb-5 inline-flex rounded-2xl bg-black p-4 text-3xl">
+          👥
+        </div>
+
+        <h3 className="text-gray-500">
+          Clientes
+        </h3>
+
+        <p className="mt-2 text-3xl font-bold">
+          {totalCustomers}
+        </p>
+
+        <p className="mt-3 text-sm text-gray-400">
+          Ver clientes →
+        </p>
+      </Link>
+
+      <Link
+        href="/admin/orders"
+        className="block cursor-pointer rounded-3xl bg-white p-6 shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
+      >
+        <div className="mb-5 inline-flex rounded-2xl bg-black p-4 text-3xl">
+          💶
+        </div>
+
+        <h3 className="text-gray-500">
+          Ventas
+        </h3>
+
+        <p className="mt-2 text-3xl font-bold">
+          {totalSales.toFixed(2)} €
+        </p>
+
+        <p className="mt-3 text-sm text-gray-400">
+          Ver ventas →
+        </p>
+      </Link>
     </div>
   );
 }

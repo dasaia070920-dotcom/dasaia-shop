@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-import DashboardCards from "../components/DashboardCards";
 import ProductForm from "../components/ProductForm";
 import ProductList from "../components/ProductList";
 import SearchBar from "../components/SearchBar";
@@ -48,7 +47,7 @@ export default function ProductsPage() {
       alert("✅ Producto actualizado");
 
       setEditingProduct(null);
-      loadProducts();
+      await loadProducts();
       return;
     }
 
@@ -63,7 +62,7 @@ export default function ProductsPage() {
 
     alert("✅ Producto añadido");
 
-    loadProducts();
+    await loadProducts();
   }
 
   async function deleteProduct(id: string) {
@@ -79,7 +78,7 @@ export default function ProductsPage() {
       return;
     }
 
-    loadProducts();
+    await loadProducts();
   }
 
   function cancelEdit() {
@@ -97,8 +96,6 @@ export default function ProductsPage() {
       <h1 className="mb-10 text-4xl font-bold">
         Gestión de Productos
       </h1>
-
-      <DashboardCards products={products} />
 
       <ProductForm
         onSave={saveProduct}

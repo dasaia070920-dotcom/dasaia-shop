@@ -6,11 +6,8 @@ import { supabase } from "@/lib/supabase";
 
 import DashboardStats from "./components/DashboardStats";
 
-import { Product } from "@/types/product";
-
 export default function AdminDashboard() {
-  const [products, setProducts] = useState<Product[]>([]);
-
+  const [totalProducts, setTotalProducts] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [totalSales, setTotalSales] = useState(0);
@@ -29,14 +26,14 @@ export default function AdminDashboard() {
   async function loadProducts() {
     const { data, error } = await supabase
       .from("products")
-      .select("*");
+      .select("id");
 
     if (error) {
       alert(error.message);
       return;
     }
 
-    setProducts(data || []);
+    setTotalProducts(data?.length || 0);
   }
 
   async function loadOrders() {
@@ -60,7 +57,7 @@ export default function AdminDashboard() {
     setTotalCustomers(customers.size);
 
     const sales = orders.reduce(
-      (sum, order) => sum + Number(order.total),
+      (sum, order) => sum + Number(order.total || 0),
       0
     );
 
@@ -74,7 +71,7 @@ export default function AdminDashboard() {
       </h1>
 
       <DashboardStats
-        totalProducts={products.length}
+        totalProducts={totalProducts}
         totalOrders={totalOrders}
         totalCustomers={totalCustomers}
         totalSales={totalSales}
@@ -96,7 +93,7 @@ export default function AdminDashboard() {
         >
           Ir a Productos
         </Link>
-            </div>
+      </div>
     </>
   );
 }
