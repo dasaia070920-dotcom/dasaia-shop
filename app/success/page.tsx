@@ -9,7 +9,11 @@ export default function SuccessPage() {
   const { clearCart } = useCart();
 
   useEffect(() => {
-    clearCart();
+    const timer = setTimeout(() => {
+      clearCart();
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, [clearCart]);
 
   return (
