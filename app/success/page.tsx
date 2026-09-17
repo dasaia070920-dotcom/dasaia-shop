@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
+import { useEffect } from "react";
+import { useCart } from "../context/CartContext";
 
 export default function SuccessPage() {
+  const { clearCart } = useCart();
+
+  useEffect(() => {
+    clearCart();
+  }, [clearCart]);
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#faf9f7] px-6 py-32">
       <div className="w-full max-w-2xl rounded-3xl bg-white p-10 text-center shadow-sm md:p-16">
