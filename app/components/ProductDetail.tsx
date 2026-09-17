@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Truck,
   ShieldCheck,
@@ -152,6 +153,15 @@ export default function ProductDetail({
               ? "Producto agotado"
               : "Añadir al carrito"}
           </button>
+
+          {!isOutOfStock && (
+            <Link
+              href="/cart"
+              className="mt-4 flex items-center justify-center rounded-full border border-black py-5 text-lg font-semibold text-black transition hover:bg-black hover:text-white"
+            >
+              Ir al carrito
+            </Link>
+          )}
 
           <div className="mt-14 space-y-6 border-t pt-10">
             <div className="flex gap-4">
