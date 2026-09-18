@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { products } from "../data/products";
+import { getProducts, Product } from "@/lib/products";
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -11,15 +11,31 @@ function SearchContent() {
 
   const [search, setSearch] = useState(query);
   const [category, setCategory] = useState("Todos");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setSearch(query);
   }, [query]);
 
+  useEffect(() => {
+    async function loadProducts() {
+      const data = await getProducts();
+      setProducts(data);
+      setLoading(false);
+    }
+
+    loadProducts();
+  }, []);
+
   const filteredProducts = products.filter((product) => {
+    const text = search.toLowerCase().trim();
+
     const matchesSearch =
-      product.name.toLowerCase().includes(search.toLowerCase()) ||
-      product.category.toLowerCase().includes(search.toLowerCase());
+      !text ||
+      product.name.toLowerCase().includes(text) ||
+      product.category.toLowerCase().includes(text) ||
+      product.description.toLowerCase().includes(text);
 
     const matchesCategory =
       category === "Todos" || product.category === category;
@@ -46,6 +62,7 @@ function SearchContent() {
           (cat) => (
             <button
               key={cat}
+              type="button"
               onClick={() => setCategory(cat)}
               className={`rounded-full px-5 py-2 font-medium transition ${
                 category === cat
@@ -59,8 +76,12 @@ function SearchContent() {
         )}
       </div>
 
-      {filteredProducts.length === 0 ? (
-        <p className="text-center text-gray-500">
+      {loading ? (
+        <p className="py-20 text-center text-gray-500">
+          Cargando productos...
+        </p>
+      ) : filteredProducts.length === 0 ? (
+        <p className="py-20 text-center text-gray-500">
           No se encontraron productos.
         </p>
       ) : (
@@ -91,7 +112,7 @@ function SearchContent() {
               </p>
 
               <p className="mt-3 text-2xl font-bold">
-                {product.price} €
+                {Number(product.price).toFixed(2)} €
               </p>
 
               <Link
