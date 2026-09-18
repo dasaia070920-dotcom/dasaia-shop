@@ -1,64 +1,56 @@
 "use client";
 
-import { Product } from "@/types/product";
+import Link from "next/link";
 
 type Props = {
-  products: Product[];
+  totalProducts: number;
+  totalOrders: number;
+  totalCustomers: number;
+  totalSales: number;
 };
 
-export default function DashboardCards({ products }: Props) {
-  const totalProducts = products.length;
-
-  const productsInStock = products.filter(
-    (product) => product.stock > 0
-  ).length;
-
-  const productsOutOfStock = products.filter(
-    (product) => product.stock === 0
-  ).length;
-
-  const inventoryValue = products.reduce(
-    (total, product) => total + product.price * product.stock,
-    0
-  );
-
+export default function DashboardStats({
+  totalProducts,
+  totalOrders,
+  totalCustomers,
+  totalSales,
+}: Props) {
   const cards = [
     {
       title: "Productos",
       value: totalProducts,
-      color: "bg-blue-500",
       icon: "📦",
+      href: "/admin/products",
     },
     {
-      title: "En stock",
-      value: productsInStock,
-      color: "bg-green-500",
-      icon: "🟢",
+      title: "Pedidos",
+      value: totalOrders,
+      icon: "🛍️",
+      href: "/admin/orders",
     },
     {
-      title: "Sin stock",
-      value: productsOutOfStock,
-      color: "bg-red-500",
-      icon: "🔴",
+      title: "Clientes",
+      value: totalCustomers,
+      icon: "👥",
+      href: "/admin/customers",
     },
     {
-      title: "Inventario",
-      value: `${inventoryValue.toFixed(2)} €`,
-      color: "bg-black",
+      title: "Ventas",
+      value: `${totalSales.toFixed(2)} €`,
       icon: "💶",
+      href: "/admin/orders",
     },
   ];
 
   return (
     <div className="mb-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => (
-        <div
+        <Link
           key={card.title}
-          className="rounded-3xl bg-white p-6 shadow-lg"
+          href={card.href}
+          className="rounded-3xl bg-white p-6 shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
         >
-          <div
-            className={`mb-5 inline-flex rounded-2xl ${card.color} p-4 text-3xl text-white`}
-          >
+          <div className="mb-5 inline-flex rounded-2xl bg-black p-4 text-3xl">
             {card.icon}
           </div>
 
@@ -69,7 +61,11 @@ export default function DashboardCards({ products }: Props) {
           <p className="mt-2 text-3xl font-bold">
             {card.value}
           </p>
-        </div>
+
+          <p className="mt-3 text-sm text-gray-400">
+            Ver detalles →
+          </p>
+        </Link>
       ))}
     </div>
   );
