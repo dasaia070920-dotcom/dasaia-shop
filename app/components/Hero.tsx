@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 export default function Hero() {
   return (
     <section className="relative min-h-[calc(100vh-90px)] overflow-hidden">
@@ -13,9 +11,8 @@ export default function Hero() {
 
       <div className="absolute inset-0 bg-black/50" />
 
-     <div className="relative z-10 mx-auto flex min-h-[calc(100vh-90px)] w-full max-w-[1600px] items-center px-16 py-20">
+      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-90px)] w-full max-w-[1600px] items-center px-16 py-20">
         <div className="max-w-2xl text-white">
-
           <p className="mb-6 text-sm font-medium uppercase tracking-[0.35em] text-gray-200">
             NUEVA COLECCIÓN 2026
           </p>
@@ -32,23 +29,22 @@ export default function Hero() {
           </p>
 
           <div className="mt-10 flex flex-wrap gap-4">
-            <Link
+            <a
               href="/#products"
               className="rounded-full bg-white px-8 py-4 font-semibold text-black"
             >
               Comprar ahora
-            </Link>
+            </a>
 
-            <Link
+            <a
               href="/#categories"
               className="rounded-full border border-white px-8 py-4 font-semibold text-white"
             >
               Ver colección
-            </Link>
+            </a>
           </div>
 
           <div className="mt-14 grid grid-cols-1 gap-8 sm:grid-cols-3">
-
             <div>
               <h3 className="font-semibold">
                 🚚 Envío gratuito
@@ -78,9 +74,7 @@ export default function Hero() {
                 Hasta 30 días para devolver.
               </p>
             </div>
-
           </div>
-
         </div>
       </div>
     </section>

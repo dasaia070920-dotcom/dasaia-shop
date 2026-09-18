@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { CartProvider } from "./context/CartContext";
 import { FavoritesProvider } from "./context/FavoritesContext";
+import HomeButton from "./components/HomeButton";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -25,7 +26,10 @@ export default function RootLayout({
     <html lang="es" className={geist.variable}>
       <body className="bg-[#faf9f7] text-black antialiased">
         <FavoritesProvider>
-          <CartProvider>{children}</CartProvider>
+          <CartProvider>
+            {children}
+            <HomeButton />
+          </CartProvider>
         </FavoritesProvider>
       </body>
     </html>

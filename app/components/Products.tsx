@@ -27,6 +27,27 @@ export default function Products() {
     loadProducts();
   }, []);
 
+  useEffect(() => {
+    function handleCategory(event: Event) {
+      const customEvent = event as CustomEvent<string>;
+      const selectedCategory = customEvent.detail;
+
+      setCategory(selectedCategory);
+    }
+
+    window.addEventListener(
+      "dasaia-category",
+      handleCategory
+    );
+
+    return () => {
+      window.removeEventListener(
+        "dasaia-category",
+        handleCategory
+      );
+    };
+  }, []);
+
   const categories = [
     "Todas",
     ...new Set(products.map((p) => p.category)),
@@ -42,7 +63,9 @@ export default function Products() {
     }
 
     if (category !== "Todas") {
-      list = list.filter((p) => p.category === category);
+      list = list.filter(
+        (p) => p.category === category
+      );
     }
 
     if (sort === "low") {
@@ -72,9 +95,7 @@ export default function Products() {
       className="bg-[#faf9f7] py-24"
     >
       <div className="mx-auto max-w-7xl px-6">
-
         <div className="mb-14 text-center">
-
           <p className="mb-3 uppercase tracking-[0.35em] text-gray-500">
             DASAIA
           </p>
@@ -88,11 +109,9 @@ export default function Products() {
             seleccionados para mujeres que buscan
             elegancia todos los días.
           </p>
-
         </div>
 
         <div className="mb-14 flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-sm md:flex-row">
-
           <input
             placeholder="Buscar producto..."
             value={search}
@@ -132,11 +151,9 @@ export default function Products() {
               Precio ↓
             </option>
           </select>
-
         </div>
 
         <div className="grid gap-x-8 gap-y-14 md:grid-cols-2 xl:grid-cols-4">
-
           {filteredProducts.map((product) => (
             <ProductCard
               key={product.id}
@@ -161,9 +178,7 @@ export default function Products() {
               }
             />
           ))}
-
         </div>
-
       </div>
     </section>
   );
