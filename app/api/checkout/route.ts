@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -38,6 +40,51 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "El carrito está vacío." },
         { status: 400 }
+      );
+    }
+
+    /*
+     * Comprobamos si el cliente está conectado a su cuenta.
+     */
+    let userId: string | null = null;
+
+    try {
+      const cookieStore = await cookies();
+
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll();
+            },
+            setAll(cookiesToSet) {
+              try {
+                cookiesToSet.forEach(
+                  ({ name, value, options }) => {
+                    cookieStore.set(name, value, options);
+                  }
+                );
+              } catch {
+                // No hacemos nada si las cookies no pueden modificarse.
+              }
+            },
+          },
+        }
+      );
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        userId = user.id;
+      }
+    } catch (authError) {
+      console.error(
+        "No se pudo comprobar la sesión del usuario:",
+        authError
       );
     }
 
@@ -100,7 +147,18 @@ export async function POST(request: Request) {
     const total = subtotal + shipping;
 
     /*
-     * Creamos el pedido usando la conexión privada de Supabase.
+     * El pago tiene una duración máxima de 1 hora.
+     */
+    const paymentExpiresAt = new Date(
+      Date.now() + 60 * 60 * 1000
+    ).toISOString();
+
+    const stripeExpiresAt = Math.floor(
+      new Date(paymentExpiresAt).getTime() / 1000
+    );
+
+    /*
+     * Creamos el pedido como pago pendiente.
      */
     const { data: order, error: orderError } =
       await supabaseAdmin
@@ -115,8 +173,11 @@ export async function POST(request: Request) {
             city,
             postal_code: postalCode,
             total,
-            status: "Pendiente",
-            user_id: null,
+            status: "Pago pendiente",
+            payment_status: "pending",
+            payment_expires_at: paymentExpiresAt,
+            stripe_session_id: null,
+            user_id: userId,
           },
         ])
         .select()
@@ -217,11 +278,13 @@ export async function POST(request: Request) {
 
     /*
      * Usamos la dirección real desde la que se está haciendo
-     * la petición. Así funciona correctamente en Vercel
-     * sin depender de NEXT_PUBLIC_SITE_URL.
+     * la petición.
      */
     const baseUrl = new URL(request.url).origin;
 
+    /*
+     * Creamos la sesión de Stripe con caducidad de 1 hora.
+     */
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
 
@@ -232,6 +295,8 @@ export async function POST(request: Request) {
       customer_email: email,
 
       billing_address_collection: "required",
+
+      expires_at: stripeExpiresAt,
 
       metadata: {
         orderId: order.id,
@@ -244,8 +309,35 @@ export async function POST(request: Request) {
         `${baseUrl}/checkout/cancel`,
     });
 
+    /*
+     * Guardamos la sesión de Stripe asociada al pedido.
+     */
+    const { error: updateOrderError } = await supabaseAdmin
+      .from("orders")
+      .update({
+        stripe_session_id: session.id,
+      })
+      .eq("id", order.id);
+
+    if (updateOrderError) {
+      console.error(
+        "ERROR GUARDANDO SESIÓN DE STRIPE:",
+        updateOrderError
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "El pedido se creó, pero no se pudo guardar la sesión de pago.",
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       url: session.url,
+      orderId: order.id,
+      paymentExpiresAt,
     });
   } catch (error) {
     console.error("ERROR STRIPE:", error);

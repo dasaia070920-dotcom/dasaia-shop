@@ -34,6 +34,9 @@ export async function POST(request: Request) {
 
     console.log("EVENTO STRIPE:", event.type);
 
+    /*
+     * PAGO COMPLETADO
+     */
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
@@ -61,7 +64,7 @@ export async function POST(request: Request) {
       const { data: order, error: orderError } =
         await supabaseAdmin
           .from("orders")
-          .select("id, status")
+          .select("id, status, payment_status")
           .eq("id", orderId)
           .single();
 
@@ -80,7 +83,7 @@ export async function POST(request: Request) {
       /*
        * Si ya está procesado, no volvemos a descontar stock.
        */
-      if (order.status === "Procesando") {
+      if (order.status === "Procesando" || order.payment_status === "paid") {
         console.log(
           "El pedido ya estaba procesado:",
           orderId
@@ -177,14 +180,14 @@ export async function POST(request: Request) {
       }
 
       /*
-       * Una vez descontado el stock,
-       * marcamos el pedido como Procesando.
+       * Marcamos el pedido como pagado y procesando.
        */
       const { error: updateError } =
         await supabaseAdmin
           .from("orders")
           .update({
             status: "Procesando",
+            payment_status: "paid",
           })
           .eq("id", orderId);
 
@@ -204,9 +207,89 @@ export async function POST(request: Request) {
       }
 
       console.log(
-        "PEDIDO PROCESADO CORRECTAMENTE:",
+        "PEDIDO PAGADO Y PROCESADO CORRECTAMENTE:",
         orderId
       );
+    }
+
+    /*
+     * SESIÓN DE CHECKOUT EXPIRADA
+     *
+     * Stripe puede enviar este evento cuando
+     * una sesión de pago caduca.
+     */
+    if (event.type === "checkout.session.expired") {
+      const session = event.data.object as Stripe.Checkout.Session;
+
+      console.log(
+        "PAGO EXPIRADO:",
+        session.id
+      );
+
+      const orderId = session.metadata?.orderId;
+
+      if (!orderId) {
+        console.error(
+          "La sesión expirada no tiene orderId."
+        );
+
+        return NextResponse.json({
+          received: true,
+        });
+      }
+
+      /*
+       * Solo cancelamos pedidos que todavía
+       * estén esperando el pago.
+       */
+      const { data: order, error: orderError } =
+        await supabaseAdmin
+          .from("orders")
+          .select("id, status, payment_status")
+          .eq("id", orderId)
+          .single();
+
+      if (orderError || !order) {
+        console.error(
+          "No se ha encontrado el pedido expirado:",
+          orderError
+        );
+
+        return NextResponse.json({
+          received: true,
+        });
+      }
+
+      if (order.payment_status === "pending") {
+        const { error: cancelError } =
+          await supabaseAdmin
+            .from("orders")
+            .update({
+              status: "Cancelado",
+              payment_status: "expired",
+            })
+            .eq("id", orderId);
+
+        if (cancelError) {
+          console.error(
+            "Error cancelando el pedido expirado:",
+            cancelError
+          );
+
+          return NextResponse.json(
+            {
+              error:
+                "No se ha podido cancelar el pedido expirado.",
+            },
+            { status: 500 }
+          );
+        }
+
+        console.log(
+          "PEDIDO CANCELADO POR EXPIRACIÓN:",
+          orderId
+        );
+      }
     }
 
     return NextResponse.json({
