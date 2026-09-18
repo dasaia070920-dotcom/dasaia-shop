@@ -1,28 +1,46 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import ProductCard from "../components/ProductCard";
-import { products } from "../data/products";
+import { getProducts, Product } from "@/lib/products";
 import { useFavorites } from "../context/FavoritesContext";
 import { useCart } from "../context/CartContext";
 
 export default function FavoritesPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const { favorites, toggleFavorite, isFavorite } =
     useFavorites();
 
   const { addToCart } = useCart();
+
+  useEffect(() => {
+    async function loadProducts() {
+      const data = await getProducts();
+      setProducts(data);
+      setLoading(false);
+    }
+
+    loadProducts();
+  }, []);
 
   const favoriteProducts = products.filter((product) =>
     favorites.includes(product.id)
   );
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-12">
+    <main className="mx-auto max-w-7xl px-6 py-32">
       <h1 className="mb-10 text-4xl font-bold">
         Mis favoritos
       </h1>
 
-      {favoriteProducts.length === 0 ? (
+      {loading ? (
+        <div className="py-20 text-center text-gray-500">
+          Cargando favoritos...
+        </div>
+      ) : favoriteProducts.length === 0 ? (
         <div className="text-center">
           <p className="mb-6 text-gray-500">
             Aún no tienes productos favoritos.
@@ -48,13 +66,13 @@ export default function FavoritesPage() {
               stock={product.stock}
               favorite={isFavorite(product.id)}
               onFavorite={() => toggleFavorite(product.id)}
-              onAddToCart={() =>
+              onAddToCart={(quantity) =>
                 addToCart({
                   id: product.id,
                   name: product.name,
                   price: product.price,
                   image: product.image,
-                  quantity: 1,
+                  quantity,
                 })
               }
             />
