@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -44,13 +45,25 @@ export async function POST(request: Request) {
     if (authHeader?.startsWith("Bearer ")) {
       const accessToken = authHeader.substring(7);
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabaseAdmin.auth.getUser(accessToken);
+      try {
+        const supabaseAuth = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
 
-      if (!userError && user) {
-        userId = user.id;
+        const {
+          data: { user },
+          error: userError,
+        } = await supabaseAuth.auth.getUser(accessToken);
+
+        if (userError) {
+          console.error("Error identificando usuario:", userError);
+        } else if (user) {
+          userId = user.id;
+          console.log("Usuario identificado:", user.id);
+        }
+      } catch (authError) {
+        console.error("Error comprobando sesión:", authError);
       }
     }
 
@@ -75,8 +88,6 @@ export async function POST(request: Request) {
       Date.now() + 60 * 60 * 1000
     ).toISOString();
 
-    // Stripe permite como máximo 24 horas para Checkout.
-    // Dejamos la sesión de Stripe con 1 hora.
     const stripeExpiresAt = Math.floor(
       Date.now() / 1000 + 60 * 60
     );
@@ -114,7 +125,7 @@ export async function POST(request: Request) {
     }
 
     // --------------------------------------------------
-    // GUARDAR LOS PRODUCTOS DEL PEDIDO
+    // GUARDAR PRODUCTOS DEL PEDIDO
     // --------------------------------------------------
 
     const orderItems = cart.map((item: any) => ({
@@ -174,24 +185,18 @@ export async function POST(request: Request) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-
       line_items: lineItems,
-
       customer_email: email,
-
       expires_at: stripeExpiresAt,
-
       success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-
       cancel_url: `${baseUrl}/checkout`,
-
       metadata: {
         orderId: order.id,
       },
     });
 
     // --------------------------------------------------
-    // GUARDAR ID DE STRIPE EN EL PEDIDO
+    // GUARDAR SESIÓN DE STRIPE
     // --------------------------------------------------
 
     const { error: updateError } = await supabaseAdmin
@@ -207,10 +212,6 @@ export async function POST(request: Request) {
         updateError
       );
     }
-
-    // --------------------------------------------------
-    // RESPUESTA
-    // --------------------------------------------------
 
     return NextResponse.json({
       url: session.url,
