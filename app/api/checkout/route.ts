@@ -34,10 +34,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // --------------------------------------------------
-    // IDENTIFICAR AL USUARIO LOGUEADO
-    // --------------------------------------------------
-
     let userId: string | null = null;
 
     const authHeader = request.headers.get("authorization");
@@ -67,10 +63,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // --------------------------------------------------
-    // CALCULAR TOTAL
-    // --------------------------------------------------
-
     const subtotal = cart.reduce(
       (total: number, item: any) =>
         total + Number(item.price) * Number(item.quantity || 1),
@@ -80,10 +72,6 @@ export async function POST(request: Request) {
     const shipping = subtotal >= 60 ? 0 : 4.99;
     const total = subtotal + shipping;
 
-    // --------------------------------------------------
-    // FECHA DE EXPIRACIÓN DEL PAGO
-    // --------------------------------------------------
-
     const paymentExpiresAt = new Date(
       Date.now() + 60 * 60 * 1000
     ).toISOString();
@@ -92,16 +80,12 @@ export async function POST(request: Request) {
       Date.now() / 1000 + 60 * 60
     );
 
-    // --------------------------------------------------
-    // CREAR PEDIDO
-    // --------------------------------------------------
-
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .insert({
         user_id: userId,
         customer_name: customerName,
-        lastname: customerLastname || "",
+        customer_lastname: customerLastname || "",
         email,
         phone: phone || "",
         address,
@@ -123,10 +107,6 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-
-    // --------------------------------------------------
-    // GUARDAR PRODUCTOS DEL PEDIDO
-    // --------------------------------------------------
 
     const orderItems = cart.map((item: any) => ({
       order_id: order.id,
@@ -153,10 +133,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // --------------------------------------------------
-    // CREAR SESIÓN DE STRIPE
-    // --------------------------------------------------
-
     const baseUrl = new URL(request.url).origin;
 
     const lineItems = cart.map((item: any) => ({
@@ -179,7 +155,7 @@ export async function POST(request: Request) {
           },
           unit_amount: Math.round(shipping * 100),
         },
-        quantity: 1,
+      quantity: 1,
       });
     }
 
@@ -194,10 +170,6 @@ export async function POST(request: Request) {
         orderId: order.id,
       },
     });
-
-    // --------------------------------------------------
-    // GUARDAR SESIÓN DE STRIPE
-    // --------------------------------------------------
 
     const { error: updateError } = await supabaseAdmin
       .from("orders")
