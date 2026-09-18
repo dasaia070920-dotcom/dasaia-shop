@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { useCart } from "../context/CartContext";
+import { supabase } from "@/lib/supabase";
 
 export default function CheckoutPage() {
   const { cart } = useCart();
@@ -48,11 +49,28 @@ export default function CheckoutPage() {
     try {
       setLoading(true);
 
+      /*
+       * Obtenemos la sesión de la cuenta que está conectada.
+       */
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+
+      /*
+       * Si hay una sesión iniciada, enviamos el token
+       * para que el servidor pueda identificar al usuario.
+       */
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch("/api/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           customerName: customerName.trim(),
           customerLastname: customerLastname.trim(),
@@ -74,7 +92,9 @@ export default function CheckoutPage() {
       }
 
       if (!data.url) {
-        throw new Error("Stripe no ha devuelto la dirección de pago.");
+        throw new Error(
+          "Stripe no ha devuelto la dirección de pago."
+        );
       }
 
       window.location.href = data.url;
