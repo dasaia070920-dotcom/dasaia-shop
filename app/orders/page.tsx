@@ -84,8 +84,22 @@ export default function OrdersPage() {
     try {
       setPayingOrderId(orderId);
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const headers: HeadersInit = {};
+
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(
-        `/api/orders/${orderId}/pay`
+        `/api/orders/${orderId}/pay`,
+        {
+          method: "GET",
+          headers,
+        }
       );
 
       const data = await response.json();
