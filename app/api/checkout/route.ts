@@ -108,12 +108,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const orderItems = cart.map((item: any) => ({
-      order_id: order.id,
-      product_id: item.id,
-      quantity: Number(item.quantity || 1),
-      price: Number(item.price),
-    }));
+  const orderItems = cart.map((item: any) => ({
+  order_id: order.id,
+  product_id: item.id,
+  product_name: item.name,
+  quantity: Number(item.quantity || 1),
+  price: Number(item.price),
+}));
 
     const { error: itemsError } = await supabaseAdmin
       .from("order_items")
