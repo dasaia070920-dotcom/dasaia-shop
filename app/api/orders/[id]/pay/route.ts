@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -15,36 +14,41 @@ export async function GET(
   try {
     const { id } = await context.params;
 
-    const cookieStore = await cookies();
+    let userId: string | null = null;
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(
-                ({ name, value, options }) => {
-                  cookieStore.set(name, value, options);
-                }
-              );
-            } catch {
-              // No hacemos nada si las cookies no pueden modificarse.
-            }
-          },
-        },
+    const authHeader = request.headers.get("authorization");
+
+    if (authHeader?.startsWith("Bearer ")) {
+      const accessToken = authHeader.substring(7);
+
+      try {
+        const supabaseAuth = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+
+        const {
+          data: { user },
+          error: userError,
+        } = await supabaseAuth.auth.getUser(accessToken);
+
+        if (userError) {
+          console.error(
+            "Error identificando usuario:",
+            userError
+          );
+        } else if (user) {
+          userId = user.id;
+        }
+      } catch (authError) {
+        console.error(
+          "Error comprobando sesión:",
+          authError
+        );
       }
-    );
+    }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    if (!userId) {
       return NextResponse.json(
         { error: "Debes iniciar sesión." },
         { status: 401 }
@@ -67,12 +71,12 @@ export async function GET(
       );
     }
 
-    /*
-     * Comprobamos que el pedido pertenece a la cuenta.
-     */
-    if (order.user_id !== user.id) {
+    if (order.user_id !== userId) {
       return NextResponse.json(
-        { error: "No tienes permiso para acceder a este pedido." },
+        {
+          error:
+            "No tienes permiso para acceder a este pedido.",
+        },
         { status: 403 }
       );
     }
@@ -82,21 +86,24 @@ export async function GET(
       order.status !== "Pago pendiente"
     ) {
       return NextResponse.json(
-        { error: "Este pedido ya no tiene un pago pendiente." },
+        {
+          error:
+            "Este pedido ya no tiene un pago pendiente.",
+        },
         { status: 400 }
       );
     }
 
     if (!order.stripe_session_id) {
       return NextResponse.json(
-        { error: "No se ha encontrado la sesión de pago." },
+        {
+          error:
+            "No se ha encontrado la sesión de pago.",
+        },
         { status: 400 }
       );
     }
 
-    /*
-     * Comprobamos que todavía queda tiempo.
-     */
     if (order.payment_expires_at) {
       const expiresAt = new Date(
         order.payment_expires_at
@@ -122,16 +129,17 @@ export async function GET(
       }
     }
 
-    /*
-     * Recuperamos la sesión existente de Stripe.
-     */
-    const session = await stripe.checkout.sessions.retrieve(
-      order.stripe_session_id
-    );
+    const session =
+      await stripe.checkout.sessions.retrieve(
+        order.stripe_session_id
+      );
 
     if (!session.url) {
       return NextResponse.json(
-        { error: "Stripe ya no permite continuar con este pago." },
+        {
+          error:
+            "Stripe ya no permite continuar con este pago.",
+        },
         { status: 400 }
       );
     }
