@@ -1,117 +1,259 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 type Order = {
   id: string;
-  created_at: string;
   customer_name: string;
   customer_lastname: string;
   email: string;
+  phone: string;
+  address: string;
+  city: string;
+  postal_code: string;
   total: number;
   status: string;
+  created_at: string;
 };
 
-export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
+type OrderItem = {
+  id: string;
+  product_name: string;
+  image: string;
+  quantity: number;
+  price: number;
+};
+
+export default function OrderDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const [order, setOrder] = useState<Order | null>(null);
+  const [items, setItems] = useState<OrderItem[]>([]);
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
-    loadOrders();
-  }, []);
+    async function loadOrder() {
+      const { id } = await params;
 
-  async function loadOrders() {
-    const { data, error } = await supabase
+      const { data: orderData, error: orderError } =
+        await supabase
+          .from("orders")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+      if (orderError) {
+        alert(orderError.message);
+        return;
+      }
+
+      const { data: itemsData, error: itemsError } =
+        await supabase
+          .from("order_items")
+          .select("*")
+          .eq("order_id", id);
+
+      if (itemsError) {
+        alert(itemsError.message);
+        return;
+      }
+
+      setOrder(orderData);
+      setStatus(orderData.status);
+      setItems(itemsData || []);
+    }
+
+    loadOrder();
+  }, [params]);
+
+  async function updateStatus(newStatus: string) {
+    if (!order) return;
+
+    const previousStatus = order.status;
+
+    setStatus(newStatus);
+
+    const { error } = await supabase
       .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .update({
+        status: newStatus,
+      })
+      .eq("id", order.id);
 
     if (error) {
       alert(error.message);
+      setStatus(previousStatus);
       return;
     }
 
-    setOrders(data || []);
+    setOrder({
+      ...order,
+      status: newStatus,
+    });
   }
 
-  function getStatusClasses(status: string) {
+  function getStatusClasses() {
     switch (status) {
       case "Entregado":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 border-green-300";
 
       case "Cancelado":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-800 border-red-300";
 
       case "Preparando":
-        return "bg-sky-100 text-sky-800";
+        return "bg-sky-100 text-sky-800 border-sky-300";
 
       case "Enviado":
-        return "bg-pink-100 text-pink-800";
+        return "bg-pink-100 text-pink-800 border-pink-300";
 
       default:
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
     }
   }
 
+  if (!order) {
+    return <p className="p-10">Cargando pedido...</p>;
+  }
+
   return (
-    <>
-      <h1 className="mb-10 text-4xl font-bold">
-        Pedidos
+    <main className="mx-auto max-w-6xl p-10">
+      <Link
+        href="/admin/orders"
+        className="mb-8 inline-block text-blue-600 hover:underline"
+      >
+        ← Volver a pedidos
+      </Link>
+
+      <h1 className="mb-8 text-4xl font-bold">
+        Pedido
       </h1>
 
-      <div className="rounded-3xl bg-white p-10 shadow">
-        <h2 className="mb-8 text-2xl font-semibold">
-          Gestión de pedidos
+      <div className="mb-10 rounded-3xl bg-white p-8 shadow">
+        <h2 className="mb-6 text-2xl font-bold">
+          Datos del cliente
         </h2>
 
-        {orders.length === 0 ? (
-          <div className="rounded-xl border-2 border-dashed border-gray-300 p-10 text-center text-gray-400">
-            Todavía no hay pedidos.
+        <div className="space-y-3">
+          <p>
+            <strong>Nombre:</strong>{" "}
+            {order.customer_name} {order.customer_lastname}
+          </p>
+
+          <p>
+            <strong>Email:</strong> {order.email}
+          </p>
+
+          <p>
+            <strong>Teléfono:</strong> {order.phone}
+          </p>
+
+          <p>
+            <strong>Dirección:</strong> {order.address}
+          </p>
+
+          <p>
+            <strong>Ciudad:</strong> {order.city}
+          </p>
+
+          <p>
+            <strong>Código Postal:</strong> {order.postal_code}
+          </p>
+
+          <div className="flex items-center gap-3 pt-3">
+            <strong>Estado:</strong>
+
+            <select
+              value={status}
+              onChange={(e) => updateStatus(e.target.value)}
+              className={`rounded-lg border p-2 font-medium ${getStatusClasses()}`}
+            >
+              <option value="Pendiente">
+                Pendiente
+              </option>
+
+              <option value="Preparando">
+                Preparando
+              </option>
+
+              <option value="Enviado">
+                Enviado
+              </option>
+
+              <option value="Entregado">
+                Entregado
+              </option>
+
+              <option value="Cancelado">
+                Cancelado
+              </option>
+            </select>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {orders.map((order) => (
-              <Link
-                key={order.id}
-                href={`/admin/orders/${order.id}`}
-                className="flex items-center justify-between rounded-2xl border p-5 transition hover:bg-gray-50"
-              >
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    {order.customer_name}{" "}
-                    {order.customer_lastname}
-                  </h3>
-
-                  <p className="text-sm text-gray-500">
-                    {order.email}
-                  </p>
-
-                  <p className="mt-2 text-sm text-gray-400">
-                    {new Date(
-                      order.created_at
-                    ).toLocaleString()}
-                  </p>
-                </div>
-
-                <div className="text-right">
-                  <p className="text-2xl font-bold">
-                    {Number(order.total).toFixed(2)} €
-                  </p>
-
-                  <span
-                    className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${getStatusClasses(
-                      order.status
-                    )}`}
-                  >
-                    {order.status}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
-    </>
+
+      <div className="rounded-3xl bg-white p-8 shadow">
+        <h2 className="mb-6 text-2xl font-bold">
+          Productos del pedido
+        </h2>
+
+        <div className="space-y-5">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-5 rounded-2xl border p-5"
+            >
+              {item.image ? (
+                <img
+                  src={item.image}
+                  alt={item.product_name}
+                  className="h-24 w-24 rounded-xl object-cover"
+                />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-gray-100 text-xs text-gray-400">
+                  Sin imagen
+                </div>
+              )}
+
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold">
+                  {item.product_name}
+                </h3>
+
+                <p className="text-gray-500">
+                  Cantidad: {item.quantity}
+                </p>
+
+                <p className="font-semibold">
+                  {Number(item.price).toFixed(2)} €
+                </p>
+              </div>
+
+              <div className="text-right">
+                <p className="text-lg font-bold">
+                  {(
+                    Number(item.price) *
+                    Number(item.quantity)
+                  ).toFixed(2)} €
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 flex justify-between border-t pt-6">
+          <span className="text-2xl font-bold">
+            Total
+          </span>
+
+          <span className="text-3xl font-bold">
+            {Number(order.total).toFixed(2)} €
+          </span>
+        </div>
+      </div>
+    </main>
   );
 }
