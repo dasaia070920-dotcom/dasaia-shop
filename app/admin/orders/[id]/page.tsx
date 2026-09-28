@@ -100,12 +100,16 @@ export default function OrdersPage() {
                   </p>
 
                   <span
+                
                     className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${getStatusClasses(
                       order.status
                     )}`}
                   >
                     {order.status}
                   </span>
+                  <p className="text-xs text-red-500">
+  Estado recibido: [{order.status}]
+</p>
                 </div>
               </Link>
             ))}
