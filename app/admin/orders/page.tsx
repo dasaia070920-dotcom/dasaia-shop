@@ -46,7 +46,7 @@ export default function OrdersPage() {
         return "bg-sky-100 text-sky-800";
 
       case "Enviado":
-        return "bg-pink-100 text-pink-800";
+        return "bg-purple-100 text-purple-800";
 
       default:
         return "bg-yellow-100 text-yellow-800";

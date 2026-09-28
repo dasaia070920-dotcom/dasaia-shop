@@ -108,7 +108,7 @@ export default function OrderDetailsPage({
         return "bg-sky-100 text-sky-800 border-sky-300";
 
       case "Enviado":
-        return "bg-pink-100 text-pink-800 border-pink-300";
+        return "bg-purple-100 text-purple-800 border-purple-300";
 
       default:
         return "bg-yellow-100 text-yellow-800 border-yellow-300";
