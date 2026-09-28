@@ -30,18 +30,17 @@ export default function ProductForm({
   const [category, setCategory] = useState("");
   const [badge, setBadge] = useState("Nuevo");
   const [stock, setStock] = useState("1");
-
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (editingProduct) {
-      setName(editingProduct.name);
-      setDescription(editingProduct.description);
-      setPrice(editingProduct.price.toString());
-      setImage(editingProduct.image);
-      setCategory(editingProduct.category);
-      setBadge(editingProduct.badge);
-      setStock(editingProduct.stock.toString());
+      setName(editingProduct.name || "");
+      setDescription(editingProduct.description || "");
+      setPrice(editingProduct.price?.toString() || "");
+      setImage(editingProduct.image || "");
+      setCategory(editingProduct.category || "");
+      setBadge(editingProduct.badge || "Nuevo");
+      setStock(editingProduct.stock?.toString() || "1");
     } else {
       clearForm();
     }
@@ -58,25 +57,68 @@ export default function ProductForm({
   }
 
   async function handleSubmit() {
-    if (!name || !description || !price || !image || !category) {
-      alert("Completa todos los campos.");
+    const cleanName = name.trim();
+    const cleanDescription = description.trim();
+    const cleanImage = image.trim();
+    const cleanCategory = category.trim();
+
+    const numericPrice = Number(price);
+    const numericStock = Number(stock);
+
+    if (!cleanName) {
+      alert("Falta el nombre del producto.");
+      return;
+    }
+
+    if (!cleanDescription) {
+      alert("Falta la descripción.");
+      return;
+    }
+
+    if (!price || Number.isNaN(numericPrice) || numericPrice <= 0) {
+      alert("Introduce un precio válido.");
+      return;
+    }
+
+    if (!cleanImage) {
+      alert("Falta subir la imagen del producto.");
+      return;
+    }
+
+    if (!cleanCategory) {
+      alert("Selecciona una categoría.");
+      return;
+    }
+
+    if (
+      !stock ||
+      Number.isNaN(numericStock) ||
+      numericStock < 0
+    ) {
+      alert("Introduce un stock válido.");
       return;
     }
 
     setLoading(true);
 
-    await onSave({
-      name,
-      description,
-      price: Number(price),
-      image,
-      category,
-      badge,
-      stock: Number(stock),
-    });
+    try {
+      await onSave({
+        name: cleanName,
+        description: cleanDescription,
+        price: numericPrice,
+        image: cleanImage,
+        category: cleanCategory,
+        badge: badge || "Nuevo",
+        stock: numericStock,
+      });
 
-    setLoading(false);
-    clearForm();
+      clearForm();
+    } catch (error) {
+      console.error("Error guardando producto:", error);
+      alert("No se pudo guardar el producto.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleCancel() {
@@ -111,11 +153,17 @@ export default function ProductForm({
           type="number"
           placeholder="Precio (€)"
           value={price}
+          min="0"
+          step="0.01"
           onChange={(e) => setPrice(e.target.value)}
           className="w-full rounded-xl border p-3"
         />
 
-        <ImageUploader onUpload={(url) => setImage(url)} />
+        <ImageUploader
+          onUpload={(url) => {
+            setImage(url);
+          }}
+        />
 
         {image && (
           <img
@@ -126,43 +174,47 @@ export default function ProductForm({
         )}
 
         <select
-  value={category}
-  onChange={(e) => setCategory(e.target.value)}
-  className="w-full rounded-xl border p-3"
->
-  <option value="">Selecciona una categoría</option>
-  <option value="Mujer">Mujer</option>
-  <option value="Hombre">Hombre</option>
-  <option value="Niños">Niños</option>
-  <option value="Perfumes">Perfumes</option>
-  <option value="Cosmética">Cosmética</option>
-  <option value="Joyería">Joyería</option>
-  <option value="Accesorios">Accesorios</option>
-</select>
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="w-full rounded-xl border p-3"
+        >
+          <option value="">Selecciona una categoría</option>
+          <option value="Mujer">Mujer</option>
+          <option value="Hombre">Hombre</option>
+          <option value="Niños">Niños</option>
+          <option value="Perfumes">Perfumes</option>
+          <option value="Cosmética">Cosmética</option>
+          <option value="Joyería">Joyería</option>
+          <option value="Accesorios">Accesorios</option>
+        </select>
 
         <select
-  value={badge}
-  onChange={(e) => setBadge(e.target.value)}
-  className="w-full rounded-xl border p-3"
->
-  <option value="Nuevo">Nuevo</option>
-  <option value="Oferta">Oferta</option>
-  <option value="Más vendido">Más vendido</option>
-  <option value="Exclusivo">Exclusivo</option>
-  <option value="Edición limitada">Edición limitada</option>
-  <option value="Sin etiqueta">Sin etiqueta</option>
-</select>
+          value={badge}
+          onChange={(e) => setBadge(e.target.value)}
+          className="w-full rounded-xl border p-3"
+        >
+          <option value="Nuevo">Nuevo</option>
+          <option value="Oferta">Oferta</option>
+          <option value="Más vendido">Más vendido</option>
+          <option value="Exclusivo">Exclusivo</option>
+          <option value="Edición limitada">
+            Edición limitada
+          </option>
+          <option value="Sin etiqueta">Sin etiqueta</option>
+        </select>
 
         <input
           type="number"
           placeholder="Stock"
           value={stock}
+          min="0"
           onChange={(e) => setStock(e.target.value)}
           className="w-full rounded-xl border p-3"
         />
 
         <div className="flex gap-4">
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={loading}
             className="flex-1 rounded-xl bg-black py-4 text-white transition hover:bg-neutral-800 disabled:opacity-50"

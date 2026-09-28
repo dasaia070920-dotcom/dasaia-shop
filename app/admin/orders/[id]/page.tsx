@@ -39,21 +39,23 @@ export default function OrderDetailsPage({
     async function loadOrder() {
       const { id } = await params;
 
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const { data: orderData, error: orderError } =
+        await supabase
+          .from("orders")
+          .select("*")
+          .eq("id", id)
+          .single();
 
       if (orderError) {
         alert(orderError.message);
         return;
       }
 
-      const { data: itemsData, error: itemsError } = await supabase
-        .from("order_items")
-        .select("*")
-        .eq("order_id", id);
+      const { data: itemsData, error: itemsError } =
+        await supabase
+          .from("order_items")
+          .select("*")
+          .eq("order_id", id);
 
       if (itemsError) {
         alert(itemsError.message);
@@ -69,9 +71,9 @@ export default function OrderDetailsPage({
   }, [params]);
 
   async function updateStatus(newStatus: string) {
-    setStatus(newStatus);
-
     if (!order) return;
+
+    setStatus(newStatus);
 
     const { error } = await supabase
       .from("orders")
@@ -82,11 +84,32 @@ export default function OrderDetailsPage({
 
     if (error) {
       alert(error.message);
-    } else {
-      setOrder({
-        ...order,
-        status: newStatus,
-      });
+      setStatus(order.status);
+      return;
+    }
+
+    setOrder({
+      ...order,
+      status: newStatus,
+    });
+  }
+
+  function getStatusClasses() {
+    switch (status) {
+      case "Entregado":
+        return "bg-green-100 text-green-800 border-green-300";
+
+      case "Cancelado":
+        return "bg-red-100 text-red-800 border-red-300";
+
+      case "Preparando":
+        return "bg-sky-100 text-sky-800 border-sky-300";
+
+      case "Enviado":
+        return "bg-pink-100 text-pink-800 border-pink-300";
+
+      default:
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
     }
   }
 
@@ -96,7 +119,6 @@ export default function OrderDetailsPage({
 
   return (
     <main className="mx-auto max-w-6xl p-10">
-
       <Link
         href="/admin/orders"
         className="mb-8 inline-block text-blue-600 hover:underline"
@@ -109,13 +131,11 @@ export default function OrderDetailsPage({
       </h1>
 
       <div className="mb-10 rounded-3xl bg-white p-8 shadow">
-
         <h2 className="mb-6 text-2xl font-bold">
           Datos del cliente
         </h2>
 
         <div className="space-y-3">
-
           <p>
             <strong>Nombre:</strong>{" "}
             {order.customer_name} {order.customer_lastname}
@@ -141,28 +161,41 @@ export default function OrderDetailsPage({
             <strong>Código Postal:</strong> {order.postal_code}
           </p>
 
-          <div className="flex items-center gap-3">
-
+          <div className="flex items-center gap-3 pt-3">
             <strong>Estado:</strong>
 
             <select
               value={status}
-              onChange={(e) => updateStatus(e.target.value)}
-              className="rounded-lg border p-2"
+              onChange={(e) =>
+                updateStatus(e.target.value)
+              }
+              className={`rounded-lg border p-2 font-medium ${getStatusClasses()}`}
             >
-              <option>Pendiente</option>
-              <option>Preparando</option>
-              <option>Enviado</option>
-              <option>Entregado</option>
+              <option value="Pendiente">
+                Pendiente
+              </option>
+
+              <option value="Preparando">
+                Preparando
+              </option>
+
+              <option value="Enviado">
+                Enviado
+              </option>
+
+              <option value="Entregado">
+                Entregado
+              </option>
+
+              <option value="Cancelado">
+                Cancelado
+              </option>
             </select>
-
           </div>
-
         </div>
-
       </div>
-            <div className="rounded-3xl bg-white p-8 shadow">
 
+      <div className="rounded-3xl bg-white p-8 shadow">
         <h2 className="mb-6 text-2xl font-bold">
           Productos del pedido
         </h2>
@@ -173,11 +206,17 @@ export default function OrderDetailsPage({
               key={item.id}
               className="flex items-center gap-5 rounded-2xl border p-5"
             >
-              <img
-                src={item.image}
-                alt={item.product_name}
-                className="h-24 w-24 rounded-xl object-cover"
-              />
+              {item.image ? (
+                <img
+                  src={item.image}
+                  alt={item.product_name}
+                  className="h-24 w-24 rounded-xl object-cover"
+                />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-gray-100 text-xs text-gray-400">
+                  Sin imagen
+                </div>
+              )}
 
               <div className="flex-1">
                 <h3 className="text-lg font-semibold">
@@ -189,13 +228,16 @@ export default function OrderDetailsPage({
                 </p>
 
                 <p className="font-semibold">
-                  {item.price} €
+                  {Number(item.price).toFixed(2)} €
                 </p>
               </div>
 
               <div className="text-right">
-                <p className="font-bold text-lg">
-                  {(item.price * item.quantity).toFixed(2)} €
+                <p className="text-lg font-bold">
+                  {(
+                    Number(item.price) *
+                    Number(item.quantity)
+                  ).toFixed(2)} €
                 </p>
               </div>
             </div>
@@ -208,12 +250,10 @@ export default function OrderDetailsPage({
           </span>
 
           <span className="text-3xl font-bold">
-            {order.total} €
+            {Number(order.total).toFixed(2)} €
           </span>
         </div>
-
       </div>
-
     </main>
   );
 }
