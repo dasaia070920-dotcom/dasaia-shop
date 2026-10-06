@@ -45,28 +45,41 @@ export default function ProductCard({
     if (isOutOfStock) return;
 
     onAddToCart(quantity);
-
     setQuantity(1);
   }
 
   return (
-    <div className="group overflow-hidden rounded-3xl bg-white shadow-sm transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
+    <article className="group overflow-hidden rounded-3xl bg-white shadow-sm transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
 
+      {/* IMAGEN Y ENLACE AL PRODUCTO */}
       <div className="relative overflow-hidden">
+        <Link
+          href={`/product/${id}`}
+          className="block"
+        >
+          <img
+            src={image}
+            alt={name}
+            className="h-80 w-full object-cover transition duration-700 md:group-hover:scale-110"
+          />
+        </Link>
 
-        <img
-          src={image}
-          alt={name}
-          className="h-80 w-full object-cover transition duration-700 group-hover:scale-110"
-        />
+        {/* ETIQUETA */}
+        {badge && (
+          <span className="pointer-events-none absolute left-4 top-4 rounded-full bg-black px-4 py-1 text-xs font-semibold uppercase tracking-wider text-white">
+            {badge}
+          </span>
+        )}
 
-        <span className="absolute left-4 top-4 rounded-full bg-black px-4 py-1 text-xs font-semibold uppercase tracking-wider text-white">
-          {badge}
-        </span>
-
+        {/* FAVORITOS */}
         <button
           type="button"
           onClick={onFavorite}
+          aria-label={
+            favorite
+              ? "Quitar de favoritos"
+              : "Añadir a favoritos"
+          }
           className="absolute right-4 top-4 rounded-full bg-white/90 p-2 shadow-lg transition hover:scale-110"
         >
           <Heart
@@ -76,7 +89,8 @@ export default function ProductCard({
           />
         </button>
 
-        <div className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-black/80 via-black/30 to-transparent p-5 transition duration-500 group-hover:translate-y-0">
+        {/* ACCIONES */}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-5 pt-12 md:translate-y-full md:transition md:duration-500 md:group-hover:translate-y-0">
 
           <Link
             href={`/product/${id}`}
@@ -89,7 +103,6 @@ export default function ProductCard({
           {stock > 0 ? (
             <>
               <div className="mb-3 flex items-center justify-center">
-
                 <div className="flex overflow-hidden rounded-full border border-white/40 bg-white">
 
                   <button
@@ -115,7 +128,6 @@ export default function ProductCard({
                   </button>
 
                 </div>
-
               </div>
 
               <button
@@ -136,29 +148,30 @@ export default function ProductCard({
               Agotado
             </button>
           )}
-
         </div>
-
       </div>
 
+      {/* INFORMACIÓN */}
       <div className="p-6">
+        <Link
+          href={`/product/${id}`}
+          className="block"
+        >
+          <h3 className="text-xl font-semibold text-gray-900 hover:text-gray-600">
+            {name}
+          </h3>
 
-        <h3 className="text-xl font-semibold text-gray-900 transition group-hover:text-black">
-          {name}
-        </h3>
-
-        <p className="mt-3 text-3xl font-bold text-black">
-          {price.toFixed(2)} €
-        </p>
+          <p className="mt-3 text-3xl font-bold text-black">
+            {price.toFixed(2)} €
+          </p>
+        </Link>
 
         <p className="mt-2 text-sm text-gray-500">
           {stock > 0
             ? `${stock} disponibles`
             : "Sin stock"}
         </p>
-
       </div>
-
-    </div>
+    </article>
   );
 }

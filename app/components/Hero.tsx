@@ -2,15 +2,18 @@
 
 export default function Hero() {
   return (
-    <section className="relative min-h-[calc(100vh-90px)] overflow-hidden md:min-h-[calc(100vh-90px)]">
+    <section className="relative min-h-[calc(100vh-90px)] overflow-hidden pointer-events-none">
+      {/* IMAGEN */}
       <img
         src="/images/hero.jpg"
         alt="DASAIA"
         className="absolute inset-0 h-full w-full object-cover"
       />
 
+      {/* OSCURECER IMAGEN */}
       <div className="absolute inset-0 bg-black/50" />
 
+      {/* CONTENIDO */}
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-90px)] w-full max-w-[1600px] items-center px-6 py-16 sm:px-8 sm:py-20 md:px-16 md:py-20">
         <div className="max-w-2xl text-white">
           <p className="mb-4 text-xs font-medium uppercase tracking-[0.25em] text-gray-200 sm:mb-6 sm:text-sm sm:tracking-[0.35em]">
@@ -28,7 +31,8 @@ export default function Hero() {
             exclusivo pensado para mujeres que buscan calidad y elegancia.
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:gap-4">
+          {/* BOTONES */}
+          <div className="pointer-events-auto mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:gap-4">
             <a
               href="/#products"
               className="rounded-full bg-white px-8 py-4 text-center font-semibold text-black"
@@ -44,6 +48,7 @@ export default function Hero() {
             </a>
           </div>
 
+          {/* VENTAJAS */}
           <div className="mt-10 grid grid-cols-1 gap-6 sm:mt-14 sm:grid-cols-3 sm:gap-8">
             <div>
               <h3 className="font-semibold">

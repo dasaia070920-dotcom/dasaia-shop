@@ -15,6 +15,7 @@ type Order = {
   postal_code: string;
   total: number;
   status: string;
+  payment_status: string;
   created_at: string;
 };
 
@@ -115,6 +116,35 @@ export default function OrderDetailsPage({
     }
   }
 
+  function getPaymentStatusClasses() {
+    switch (order?.payment_status) {
+      case "paid":
+        return "bg-green-100 text-green-800 border-green-300";
+
+      case "expired":
+        return "bg-red-100 text-red-800 border-red-300";
+
+      default:
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+    }
+  }
+
+  function getPaymentStatusText() {
+    switch (order?.payment_status) {
+      case "paid":
+        return "Pagado";
+
+      case "expired":
+        return "Caducado";
+
+      case "pending":
+        return "Pendiente";
+
+      default:
+        return order?.payment_status || "Desconocido";
+    }
+  }
+
   if (!order) {
     return <p className="p-10">Cargando pedido...</p>;
   }
@@ -161,6 +191,15 @@ export default function OrderDetailsPage({
 
           <p>
             <strong>Código Postal:</strong> {order.postal_code}
+          </p>
+
+          <p>
+            <strong>Estado del pago:</strong>{" "}
+            <span
+              className={`inline-block rounded-lg border px-3 py-1 font-medium ${getPaymentStatusClasses()}`}
+            >
+              {getPaymentStatusText()}
+            </span>
           </p>
 
           <div className="flex items-center gap-3 pt-3">
