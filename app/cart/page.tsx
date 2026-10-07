@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Trash2,
   Truck,
   ShieldCheck,
   ArrowRight,
+  X,
+  UserRound,
+  ShoppingBag,
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 
@@ -17,6 +21,8 @@ export default function CartPage() {
     decreaseQuantity,
     clearCart,
   } = useCart();
+
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
 
   const total = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -179,13 +185,13 @@ export default function CartPage() {
                   </p>
                 )}
 
-                <Link
-                  href="/checkout"
+                <button
+                  onClick={() => setShowCheckoutModal(true)}
                   className="mt-8 flex w-full items-center justify-center gap-3 rounded-full bg-black py-4 text-lg font-semibold text-white transition hover:bg-neutral-800"
                 >
                   Finalizar compra
                   <ArrowRight size={20} />
-                </Link>
+                </button>
 
                 <button
                   onClick={clearCart}
@@ -216,6 +222,102 @@ export default function CartPage() {
         )}
 
       </div>
+
+      {showCheckoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6">
+
+          <div className="relative w-full max-w-lg rounded-3xl bg-white p-8 shadow-2xl">
+
+            <button
+              onClick={() => setShowCheckoutModal(false)}
+              className="absolute right-5 top-5 rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-black"
+              aria-label="Cerrar"
+            >
+              <X size={22} />
+            </button>
+
+            <div className="mb-8 text-center">
+
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#faf9f7]">
+                <ShoppingBag size={28} />
+              </div>
+
+              <h2 className="text-3xl font-bold">
+                ¿Cómo quieres continuar?
+              </h2>
+
+              <p className="mt-3 text-gray-500">
+                Puedes comprar sin crear una cuenta o registrarte
+                para disfrutar de todas las opciones de tu cuenta.
+              </p>
+
+            </div>
+
+            <div className="space-y-4">
+
+              <Link
+                href="/checkout"
+                className="block rounded-2xl border border-gray-200 p-5 transition hover:border-black hover:bg-[#faf9f7]"
+                onClick={() => setShowCheckoutModal(false)}
+              >
+                <div className="flex items-start gap-4">
+
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black text-white">
+                    <ShoppingBag size={20} />
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold">
+                      Continuar como invitada/o
+                    </h3>
+
+                    <p className="mt-1 text-sm leading-6 text-gray-500">
+                      No necesitas crear una cuenta. Recibirás la
+                      confirmación y los datos de tu pedido por email.
+                    </p>
+                  </div>
+
+                </div>
+              </Link>
+
+              <Link
+                href="/login"
+                className="block rounded-2xl border border-gray-200 p-5 transition hover:border-black hover:bg-[#faf9f7]"
+                onClick={() => setShowCheckoutModal(false)}
+              >
+                <div className="flex items-start gap-4">
+
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#faf9f7] text-black">
+                    <UserRound size={20} />
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold">
+                      Crear una cuenta
+                    </h3>
+
+                    <p className="mt-1 text-sm leading-6 text-gray-500">
+                      Podrás consultar tus pedidos y gestionar tu
+                      cuenta desde DASAIA.
+                    </p>
+                  </div>
+
+                </div>
+              </Link>
+
+            </div>
+
+            <button
+              onClick={() => setShowCheckoutModal(false)}
+              className="mt-6 w-full py-3 text-sm text-gray-500 transition hover:text-black"
+            >
+              Seguir revisando mi carrito
+            </button>
+
+          </div>
+
+        </div>
+      )}
 
     </main>
   );
