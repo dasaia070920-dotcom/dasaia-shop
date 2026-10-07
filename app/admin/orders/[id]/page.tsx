@@ -13,6 +13,7 @@ type Order = {
   address: string;
   city: string;
   postal_code: string;
+  customer_comments: string | null;
   total: number;
   status: string;
   payment_status: string;
@@ -76,6 +77,10 @@ export default function OrderDetailsPage({
 
     const previousStatus = order.status;
 
+    if (previousStatus === newStatus) {
+      return;
+    }
+
     setStatus(newStatus);
 
     const { error } = await supabase
@@ -95,6 +100,39 @@ export default function OrderDetailsPage({
       ...order,
       status: newStatus,
     });
+
+    if (newStatus === "Enviado" && previousStatus !== "Enviado") {
+      try {
+        const response = await fetch("/api/orders/status-email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orderId: order.id,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.error(
+            "El pedido se actualizó, pero no se pudo enviar el correo:",
+            data
+          );
+
+          alert(
+            "El pedido se ha marcado como enviado, pero no se ha podido enviar el correo al cliente."
+          );
+        }
+      } catch (error) {
+        console.error("Error enviando el correo:", error);
+
+        alert(
+          "El pedido se ha marcado como enviado, pero ha ocurrido un error al enviar el correo."
+        );
+      }
+    }
   }
 
   function getStatusClasses() {
@@ -231,6 +269,22 @@ export default function OrderDetailsPage({
               </option>
             </select>
           </div>
+        </div>
+
+        <div className="mt-8 border-t pt-6">
+          <h3 className="mb-3 text-lg font-bold">
+            Comentarios sobre el pedido
+          </h3>
+
+          {order.customer_comments ? (
+            <div className="rounded-2xl bg-gray-50 p-5 text-gray-700">
+              {order.customer_comments}
+            </div>
+          ) : (
+            <p className="text-gray-500">
+              El cliente no ha dejado ningún comentario.
+            </p>
+          )}
         </div>
       </div>
 

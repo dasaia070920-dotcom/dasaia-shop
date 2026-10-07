@@ -17,6 +17,7 @@ export async function POST(request: Request) {
       address,
       city,
       postalCode,
+      customerComments,
       cart,
     } = body;
 
@@ -91,6 +92,7 @@ export async function POST(request: Request) {
         address,
         city,
         postal_code: postalCode,
+        customer_comments: customerComments?.trim() || null,
         total,
         status: "Pago pendiente",
         payment_status: "pending",
@@ -108,20 +110,23 @@ export async function POST(request: Request) {
       );
     }
 
-  const orderItems = cart.map((item: any) => ({
-  order_id: order.id,
-  product_id: item.id,
-  product_name: item.name,
-  quantity: Number(item.quantity || 1),
-  price: Number(item.price),
-}));
+    const orderItems = cart.map((item: any) => ({
+      order_id: order.id,
+      product_id: item.id,
+      product_name: item.name,
+      quantity: Number(item.quantity || 1),
+      price: Number(item.price),
+    }));
 
     const { error: itemsError } = await supabaseAdmin
       .from("order_items")
       .insert(orderItems);
 
     if (itemsError) {
-      console.error("Error creando productos del pedido:", itemsError);
+      console.error(
+        "Error creando productos del pedido:",
+        itemsError
+      );
 
       await supabaseAdmin
         .from("orders")
@@ -129,7 +134,10 @@ export async function POST(request: Request) {
         .eq("id", order.id);
 
       return NextResponse.json(
-        { error: "No se pudieron guardar los productos del pedido." },
+        {
+          error:
+            "No se pudieron guardar los productos del pedido.",
+        },
         { status: 500 }
       );
     }
@@ -156,7 +164,7 @@ export async function POST(request: Request) {
           },
           unit_amount: Math.round(shipping * 100),
         },
-      quantity: 1,
+        quantity: 1,
       });
     }
 

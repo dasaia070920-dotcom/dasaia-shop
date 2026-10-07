@@ -16,6 +16,7 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [postalCode, setPostalCode] = useState("");
+  const [customerComments, setCustomerComments] = useState("");
 
   const [loading, setLoading] = useState(false);
 
@@ -49,9 +50,6 @@ export default function CheckoutPage() {
     try {
       setLoading(true);
 
-      /*
-       * Obtenemos la sesión de la cuenta que está conectada.
-       */
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -60,10 +58,6 @@ export default function CheckoutPage() {
         "Content-Type": "application/json",
       };
 
-      /*
-       * Si hay una sesión iniciada, enviamos el token
-       * para que el servidor pueda identificar al usuario.
-       */
       if (session?.access_token) {
         headers.Authorization = `Bearer ${session.access_token}`;
       }
@@ -79,6 +73,7 @@ export default function CheckoutPage() {
           address: address.trim(),
           city: city.trim(),
           postalCode: postalCode.trim(),
+          customerComments: customerComments.trim(),
           cart,
         }),
       });
@@ -193,6 +188,22 @@ export default function CheckoutPage() {
                 }
                 className="w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-black"
               />
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Comentarios sobre el pedido (opcional)
+                </label>
+
+                <textarea
+                  placeholder="Escribe aquí cualquier comentario sobre tu pedido..."
+                  value={customerComments}
+                  onChange={(e) =>
+                    setCustomerComments(e.target.value)
+                  }
+                  rows={4}
+                  className="w-full resize-none rounded-xl border border-gray-300 p-3 outline-none focus:border-black"
+                />
+              </div>
             </div>
           </div>
 
