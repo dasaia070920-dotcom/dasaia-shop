@@ -147,6 +147,7 @@ export default function AccountOrderDetailPage() {
             <p>{order.email}</p>
             <p>{order.phone}</p>
             <p>{order.address}</p>
+
             <p>
               {order.postal_code} {order.city}
             </p>
@@ -189,6 +190,7 @@ export default function AccountOrderDetailPage() {
 
           <div className="mt-8 flex justify-between border-t pt-6 text-2xl font-bold">
             <span>Total</span>
+
             <span>
               {Number(order.total).toFixed(2)} €
             </span>

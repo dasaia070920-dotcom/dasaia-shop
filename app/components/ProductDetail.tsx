@@ -187,7 +187,7 @@ export default function ProductDetail({
                 </h3>
 
                 <p className="text-gray-500">
-                  Dispones de 30 días para devolver el pedido.
+                  Dispones de 15 días para devolver el pedido.
                 </p>
               </div>
             </div>

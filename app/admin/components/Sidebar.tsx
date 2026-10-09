@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Package,
   ShoppingCart,
+  RefreshCw,
   Users,
   Settings,
   LogOut,
@@ -28,6 +29,11 @@ const menu = [
     title: "Pedidos",
     href: "/admin/orders",
     icon: ShoppingCart,
+  },
+  {
+    title: "Devoluciones y cambios",
+    href: "/admin/returns",
+    icon: RefreshCw,
   },
   {
     title: "Clientes",

@@ -29,14 +29,33 @@ type OrderItem = {
   price: number;
 };
 
+type ReturnRequest = {
+  id: string;
+  order_item_id: string;
+  reason: string;
+  status: string;
+  request_type: string | null;
+  requested_size: string | null;
+  requested_color: string | null;
+};
+
 export default function OrderDetailPage() {
   const params = useParams();
   const orderId = params.id as string;
 
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
+  const [returns, setReturns] = useState<ReturnRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
+
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState("");
+  const [requestType, setRequestType] = useState("");
+  const [requestedSize, setRequestedSize] = useState("");
+  const [requestedColor, setRequestedColor] = useState("");
+  const [reason, setReason] = useState("");
+  const [requestLoading, setRequestLoading] = useState(false);
 
   useEffect(() => {
     loadOrder();
@@ -80,9 +99,105 @@ export default function OrderDetailPage() {
       )
       .eq("order_id", orderId);
 
+    const { data: returnData } = await supabase
+      .from("returns")
+      .select(
+        "id, order_item_id, reason, status, request_type, requested_size, requested_color"
+      )
+      .eq("order_id", orderId);
+
     setOrder(orderData);
     setItems(itemsData || []);
+    setReturns(returnData || []);
     setLoading(false);
+  }
+
+  async function handleRequest() {
+    if (!selectedItemId) {
+      alert("Selecciona el producto.");
+      return;
+    }
+
+    if (!requestType) {
+      alert("Selecciona qué quieres solicitar.");
+      return;
+    }
+
+    if (
+      requestType === "Cambio de talla" &&
+      !requestedSize.trim()
+    ) {
+      alert("Indica la talla que quieres.");
+      return;
+    }
+
+    if (
+      requestType === "Cambio de color" &&
+      !requestedColor.trim()
+    ) {
+      alert("Indica el color que quieres.");
+      return;
+    }
+
+    if (!reason.trim()) {
+      alert("Indica el motivo de la solicitud.");
+      return;
+    }
+
+    try {
+      setRequestLoading(true);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const { error } = await supabase
+        .from("returns")
+        .insert({
+          order_id: orderId,
+          user_id: user.id,
+          order_item_id: selectedItemId,
+          request_type: requestType,
+          requested_size:
+            requestType === "Cambio de talla"
+              ? requestedSize.trim()
+              : null,
+          requested_color:
+            requestType === "Cambio de color"
+              ? requestedColor.trim()
+              : null,
+          reason: reason.trim(),
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      alert("Solicitud enviada correctamente.");
+
+      setShowRequestForm(false);
+      setSelectedItemId("");
+      setRequestType("");
+      setRequestedSize("");
+      setRequestedColor("");
+      setReason("");
+
+      await loadOrder();
+    } catch (error: any) {
+      console.error(error);
+
+      alert(
+        error?.message ||
+          "No se ha podido enviar la solicitud."
+      );
+    } finally {
+      setRequestLoading(false);
+    }
   }
 
   function getRemainingTime() {
@@ -217,29 +332,44 @@ export default function OrderDetailPage() {
         </h2>
 
         <div className="space-y-4">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between border-b border-gray-100 pb-4"
-            >
-              <div>
-                <p className="font-semibold">
-                  {item.product_name}
-                </p>
+          {items.map((item) => {
+            const itemRequest = returns.find(
+              (request) =>
+                request.order_item_id === item.id
+            );
 
-                <p className="text-sm text-gray-500">
-                  Cantidad: {item.quantity}
+            return (
+              <div
+                key={item.id}
+                className="flex items-center justify-between border-b border-gray-100 pb-4"
+              >
+                <div>
+                  <p className="font-semibold">
+                    {item.product_name}
+                  </p>
+
+                  <p className="text-sm text-gray-500">
+                    Cantidad: {item.quantity}
+                  </p>
+
+                  {itemRequest && (
+                    <p className="mt-2 text-sm font-medium text-gray-600">
+                      Solicitud:{" "}
+                      {itemRequest.request_type} —{" "}
+                      {itemRequest.status}
+                    </p>
+                  )}
+                </div>
+
+                <p className="font-semibold">
+                  {(
+                    Number(item.price) * item.quantity
+                  ).toFixed(2)}{" "}
+                  €
                 </p>
               </div>
-
-              <p className="font-semibold">
-                {(
-                  Number(item.price) * item.quantity
-                ).toFixed(2)}{" "}
-                €
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-6 flex justify-between border-t pt-5 text-xl font-bold">
@@ -251,7 +381,7 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      <div className="rounded-3xl bg-white p-6 shadow">
+      <div className="mb-8 rounded-3xl bg-white p-6 shadow">
         <h2 className="mb-5 text-xl font-bold">
           Datos del pedido
         </h2>
@@ -292,6 +422,183 @@ export default function OrderDetailPage() {
           </p>
         </div>
       </div>
+
+      {order.status === "Entregado" && (
+        <section className="rounded-3xl bg-white p-6 shadow">
+          <h2 className="text-xl font-bold">
+            Devoluciones y cambios
+          </h2>
+
+          {!showRequestForm ? (
+            <div>
+              <p className="mt-3 text-gray-600">
+                Puedes solicitar la devolución de un producto
+                o pedir un cambio de talla o color.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setShowRequestForm(true)}
+                className="mt-6 rounded-full bg-black px-6 py-3 font-semibold text-white transition hover:bg-neutral-800"
+              >
+                Solicitar devolución o cambio
+              </button>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-5">
+              <div>
+                <label className="mb-2 block font-medium">
+                  Producto
+                </label>
+
+                <select
+                  value={selectedItemId}
+                  onChange={(e) =>
+                    setSelectedItemId(e.target.value)
+                  }
+                  className="w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-black"
+                >
+                  <option value="">
+                    Selecciona un producto
+                  </option>
+
+                  {items.map((item) => {
+                    const alreadyRequested = returns.some(
+                      (request) =>
+                        request.order_item_id === item.id
+                    );
+
+                    return (
+                      <option
+                        key={item.id}
+                        value={item.id}
+                        disabled={alreadyRequested}
+                      >
+                        {item.product_name}
+                        {alreadyRequested
+                          ? " — solicitud realizada"
+                          : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block font-medium">
+                  ¿Qué quieres solicitar?
+                </label>
+
+                <select
+                  value={requestType}
+                  onChange={(e) => {
+                    setRequestType(e.target.value);
+                    setRequestedSize("");
+                    setRequestedColor("");
+                  }}
+                  className="w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-black"
+                >
+                  <option value="">
+                    Selecciona una opción
+                  </option>
+
+                  <option value="Devolución">
+                    Devolución
+                  </option>
+
+                  <option value="Cambio de talla">
+                    Cambio de talla
+                  </option>
+
+                  <option value="Cambio de color">
+                    Cambio de color
+                  </option>
+                </select>
+              </div>
+
+              {requestType === "Cambio de talla" && (
+                <div>
+                  <label className="mb-2 block font-medium">
+                    Talla que quieres recibir
+                  </label>
+
+                  <input
+                    type="text"
+                    value={requestedSize}
+                    onChange={(e) =>
+                      setRequestedSize(e.target.value)
+                    }
+                    placeholder="Ejemplo: M"
+                    className="w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-black"
+                  />
+                </div>
+              )}
+
+              {requestType === "Cambio de color" && (
+                <div>
+                  <label className="mb-2 block font-medium">
+                    Color que quieres recibir
+                  </label>
+
+                  <input
+                    type="text"
+                    value={requestedColor}
+                    onChange={(e) =>
+                      setRequestedColor(e.target.value)
+                    }
+                    placeholder="Ejemplo: Negro"
+                    className="w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-black"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="mb-2 block font-medium">
+                  Motivo
+                </label>
+
+                <textarea
+                  value={reason}
+                  onChange={(e) =>
+                    setReason(e.target.value)
+                  }
+                  rows={4}
+                  placeholder="Explica brevemente el motivo..."
+                  className="w-full resize-none rounded-xl border border-gray-300 p-3 outline-none focus:border-black"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleRequest}
+                  disabled={requestLoading}
+                  className="rounded-full bg-black px-6 py-3 font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {requestLoading
+                    ? "Enviando..."
+                    : "Enviar solicitud"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRequestForm(false);
+                    setSelectedItemId("");
+                    setRequestType("");
+                    setRequestedSize("");
+                    setRequestedColor("");
+                    setReason("");
+                  }}
+                  className="rounded-full border border-black px-6 py-3 font-semibold text-black transition hover:bg-black hover:text-white"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
     </main>
   );
 }

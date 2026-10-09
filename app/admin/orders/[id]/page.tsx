@@ -28,6 +28,16 @@ type OrderItem = {
   price: number;
 };
 
+type ReturnRequest = {
+  id: string;
+  order_item_id: string;
+  reason: string;
+  status: string;
+  request_type: string | null;
+  requested_size: string | null;
+  requested_color: string | null;
+};
+
 export default function OrderDetailsPage({
   params,
 }: {
@@ -35,6 +45,7 @@ export default function OrderDetailsPage({
 }) {
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
+  const [returns, setReturns] = useState<ReturnRequest[]>([]);
   const [status, setStatus] = useState("");
 
   useEffect(() => {
@@ -64,9 +75,23 @@ export default function OrderDetailsPage({
         return;
       }
 
+      const { data: returnData, error: returnError } =
+        await supabase
+          .from("returns")
+          .select(
+            "id, order_item_id, reason, status, request_type, requested_size, requested_color"
+          )
+          .eq("order_id", id);
+
+      if (returnError) {
+        alert(returnError.message);
+        return;
+      }
+
       setOrder(orderData);
       setStatus(orderData.status);
       setItems(itemsData || []);
+      setReturns(returnData || []);
     }
 
     loadOrder();
@@ -149,6 +174,12 @@ export default function OrderDetailsPage({
       case "Enviado":
         return "bg-purple-100 text-purple-800 border-purple-300";
 
+      case "En proceso de devolución":
+        return "bg-orange-100 text-orange-800 border-orange-300";
+
+      case "Devuelto":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+
       default:
         return "bg-yellow-100 text-yellow-800 border-yellow-300";
     }
@@ -180,6 +211,23 @@ export default function OrderDetailsPage({
 
       default:
         return order?.payment_status || "Desconocido";
+    }
+  }
+
+  function getReturnStatusClasses(returnStatus: string) {
+    switch (returnStatus) {
+      case "Aceptada":
+        return "bg-green-100 text-green-800 border-green-300";
+
+      case "Rechazada":
+        return "bg-red-100 text-red-800 border-red-300";
+
+      case "Completada":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+
+      case "Solicitado":
+      default:
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
     }
   }
 
@@ -264,6 +312,14 @@ export default function OrderDetailsPage({
                 Entregado
               </option>
 
+              <option value="En proceso de devolución">
+                En proceso de devolución
+              </option>
+
+              <option value="Devuelto">
+                Devuelto
+              </option>
+
               <option value="Cancelado">
                 Cancelado
               </option>
@@ -288,53 +344,111 @@ export default function OrderDetailsPage({
         </div>
       </div>
 
-      <div className="rounded-3xl bg-white p-8 shadow">
+      <div className="mb-10 rounded-3xl bg-white p-8 shadow">
         <h2 className="mb-6 text-2xl font-bold">
           Productos del pedido
         </h2>
 
         <div className="space-y-5">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center gap-5 rounded-2xl border p-5"
-            >
-              {item.image ? (
-                <img
-                  src={item.image}
-                  alt={item.product_name}
-                  className="h-24 w-24 rounded-xl object-cover"
-                />
-              ) : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-gray-100 text-xs text-gray-400">
-                  Sin imagen
+          {items.map((item) => {
+            const itemReturn = returns.find(
+              (request) =>
+                request.order_item_id === item.id
+            );
+
+            return (
+              <div
+                key={item.id}
+                className="rounded-2xl border p-5"
+              >
+                <div className="flex items-center gap-5">
+                  {item.image ? (
+                    <img
+                      src={item.image}
+                      alt={item.product_name}
+                      className="h-24 w-24 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-gray-100 text-xs text-gray-400">
+                      Sin imagen
+                    </div>
+                  )}
+
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold">
+                      {item.product_name}
+                    </h3>
+
+                    <p className="text-gray-500">
+                      Cantidad: {item.quantity}
+                    </p>
+
+                    <p className="font-semibold">
+                      {Number(item.price).toFixed(2)} €
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-lg font-bold">
+                      {(
+                        Number(item.price) *
+                        Number(item.quantity)
+                      ).toFixed(2)} €
+                    </p>
+                  </div>
                 </div>
-              )}
 
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold">
-                  {item.product_name}
-                </h3>
+                {itemReturn && (
+                  <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                    <h4 className="font-bold text-amber-900">
+                      Solicitud de devolución o cambio
+                    </h4>
 
-                <p className="text-gray-500">
-                  Cantidad: {item.quantity}
-                </p>
+                    <div className="mt-3 space-y-3 text-sm text-amber-900">
+                      <p>
+                        <strong>Tipo:</strong>{" "}
+                        {itemReturn.request_type ||
+                          "No especificado"}
+                      </p>
 
-                <p className="font-semibold">
-                  {Number(item.price).toFixed(2)} €
-                </p>
+                      {itemReturn.requested_size && (
+                        <p>
+                          <strong>Talla solicitada:</strong>{" "}
+                          {itemReturn.requested_size}
+                        </p>
+                      )}
+
+                      {itemReturn.requested_color && (
+                        <p>
+                          <strong>Color solicitado:</strong>{" "}
+                          {itemReturn.requested_color}
+                        </p>
+                      )}
+
+                      <p>
+                        <strong>Motivo:</strong>{" "}
+                        {itemReturn.reason}
+                      </p>
+
+                      <div className="flex items-center gap-2">
+                        <strong>
+                          Estado de la solicitud:
+                        </strong>
+
+                        <span
+                          className={`inline-block rounded-lg border px-3 py-1 font-medium ${getReturnStatusClasses(
+                            itemReturn.status
+                          )}`}
+                        >
+                          {itemReturn.status || "Solicitado"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-
-              <div className="text-right">
-                <p className="text-lg font-bold">
-                  {(
-                    Number(item.price) *
-                    Number(item.quantity)
-                  ).toFixed(2)} €
-                </p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-8 flex justify-between border-t pt-6">
